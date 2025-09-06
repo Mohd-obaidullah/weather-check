@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Weather App</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 0;
+      overflow: hidden;
+      position: relative;
+      transition: background 0.8s ease-in-out;
+    }
+
+    /* default background */
+    body.default {
+      background: linear-gradient(to right, #6dd5ed, #2193b0);
+    }
+
+    /* container */
+    .weather-container {
+      background: rgba(255, 255, 255, 0.9);
+      padding: 20px 30px;
+      border-radius: 15px;
+      box-shadow: 0px 4px 15px rgba(0,0,0,0.3);
+      text-align: center;
+      width: 320px;
+      z-index: 10;
+      position: relative;
+    }
+
+    input {
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      width: 80%;
+      margin-bottom: 15px;
+      font-size: 16px;
+    }
+
+    button {
+      padding: 10px 15px;
+      border: none;
+      border-radius: 10px;
+      background: linear-gradient(to right, #2193b0, #6dd5ed);
+      color: white;
+      cursor: pointer;
+      font-size: 16px;
+      transition: transform 0.2s ease;
+    }
+    button:hover { transform: scale(1.05); }
+    button:active { transform: scale(0.95); }
+
+    .weather-result { margin-top: 20px; animation: fadeIn 0.6s ease-in-out; }
+    .temp { font-size: 2em; font-weight: bold; }
+    .condition { font-size: 1.2em; margin: 10px 0; }
+    .humidity { font-size: 1em; color: #333; }
+    img { margin-top: 10px; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* === Weather Animations === */
+
+    /* rain */
+    .rain {
+      position: absolute;
+      width: 2px;
+      height: 20px;
+      background: rgba(255, 255, 255, 0.6);
+      bottom: 100%;
+      animation: fall 0.6s linear infinite;
+    }
+    @keyframes fall {
+      to { transform: translateY(100vh); }
+    }
+
+    /* clouds */
+    .cloud {
+      position: absolute;
+      top: 20%;
+      background: #fff;
+      border-radius: 50%;
+      opacity: 0.8;
+      animation: moveClouds 60s linear infinite;
+    }
+    @keyframes moveClouds {
+      from { left: -200px; }
+      to { left: 100vw; }
+    }
+
+    /* sun */
+    .sun {
+      position: absolute;
+      top: 10%;
+      left: 50%;
+      width: 100px;
+      height: 100px;
+      margin-left: -50px;
+      background: yellow;
+      border-radius: 50%;
+      box-shadow: 0 0 30px rgba(255,255,0,0.8);
+      animation: pulse 3s infinite alternate;
+    }
+    @keyframes pulse {
+      from { transform: scale(1); }
+      to { transform: scale(1.1); }
+    }
+  </style>
+</head>
+<body class="default">
+  <div class="weather-container">
+    <h2>Weather App</h2>
+    <input type="text" id="locationInput" placeholder="Enter city name">
+    <br>
+    <button onclick="getWeather()">🌤 Get Weather</button>
+    
+    <div id="weatherResult" class="weather-result"></div>
+  </div>
+
+  <script>
+    function clearAnimations() {
+      document.querySelectorAll('.rain, .cloud, .sun').forEach(el => el.remove());
+    }
+
+    function createRain() {
+      for (let i = 0; i < 50; i++) {
+        let drop = document.createElement("div");
+        drop.classList.add("rain");
+        drop.style.left = Math.random() * window.innerWidth + "px";
+        drop.style.animationDuration = (0.4 + Math.random() * 0.7) + "s";
+        document.body.appendChild(drop);
+      }
+    }
+
+    function createClouds() {
+      for (let i = 0; i < 5; i++) {
+        let cloud = document.createElement("div");
+        cloud.classList.add("cloud");
+        let size = 80 + Math.random() * 100;
+        cloud.style.width = size + "px";
+        cloud.style.height = size * 0.6 + "px";
+        cloud.style.top = (10 + Math.random() * 40) + "%";
+        cloud.style.left = (-200 - Math.random() * 400) + "px";
+        document.body.appendChild(cloud);
+      }
+    }
+
+    function createSun() {
+      let sun = document.createElement("div");
+      sun.classList.add("sun");
+      document.body.appendChild(sun);
+    }
+
+    function changeBackground(condition) {
+      let body = document.body;
+      body.className = "default"; 
+      clearAnimations();
+
+      condition = condition.toLowerCase();
+
+      if (condition.includes("rain")) {
+        body.style.background = "linear-gradient(to right, #4facfe, #00f2fe)";
+        createRain();
+      } else if (condition.includes("cloud")) {
+        body.style.background = "linear-gradient(to right, #d7d2cc, #304352)";
+        createClouds();
+      } else if (condition.includes("sun") || condition.includes("clear")) {
+        body.style.background = "linear-gradient(to right, #fbc531, #e1b12c)";
+        createSun();
+      } else if (condition.includes("snow")) {
+        body.style.background = "linear-gradient(to right, #83a4d4, #b6fbff)";
+        createClouds();
+      } else {
+        body.style.background = "linear-gradient(to right, #6dd5ed, #2193b0)";
+      }
+    }
+
+    async function getWeather() {
+      const location = document.getElementById("locationInput").value;
+      const apiKey = "c6a58134593741ae9de201753250509";
+      const url = `http://api.weatherapi.com/v1/current.json?key=${apiKey}&q=${location}&aqi=yes`;
+      
+      try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error("Location not found");
+        const data = await response.json();
+
+        const condition = data.current.condition.text;
+        changeBackground(condition);
+
+        document.getElementById("weatherResult").innerHTML = `
+          <div class="temp">${data.current.temp_c}°C</div>
+          <div class="condition">${condition}</div>
+          <div class="humidity">💧 Humidity: ${data.current.humidity}%</div>
+          <img src="${data.current.condition.icon}" alt="weather icon">
+        `;
+      } catch (error) {
+        document.getElementById("weatherResult").innerHTML = `<p style="color:red;">${error.message}</p>`;
+      }
+    }
+  </script>
+</body>
+</html>
